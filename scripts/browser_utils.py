@@ -66,42 +66,30 @@ class StealthUtils:
 
     @staticmethod
     def human_type(page: Page, selector: str, text: str, wpm_min: int = 320, wpm_max: int = 480):
-        """Type with human-like speed"""
-        element = page.query_selector(selector)
-        if not element:
-            # Try waiting if not immediately found
-            try:
-                element = page.wait_for_selector(selector, timeout=2000)
-            except:
-                pass
-        
-        if not element:
-            print(f"⚠️ Element not found for typing: {selector}")
-            return
+        """Type with human-like speed using locator (auto-waits for stable element)"""
+        locator = page.locator(selector)
 
-        # Click to focus
-        element.click()
-        
-        # Type
+        # Locator auto-waits for element to be attached, visible, enabled, and stable
+        locator.click(timeout=10000)
+
+        # Type character by character via keyboard (element already focused)
         for char in text:
-            element.type(char, delay=random.uniform(25, 75))
+            page.keyboard.type(char, delay=random.uniform(25, 75))
             if random.random() < 0.05:
                 time.sleep(random.uniform(0.15, 0.4))
 
     @staticmethod
     def realistic_click(page: Page, selector: str):
-        """Click with realistic movement"""
-        element = page.query_selector(selector)
-        if not element:
-            return
+        """Click with realistic movement using locator (auto-waits for stable element)"""
+        locator = page.locator(selector)
 
-        # Optional: Move mouse to element (simplified)
-        box = element.bounding_box()
+        # Move mouse to element center for realism
+        box = locator.bounding_box(timeout=5000)
         if box:
             x = box['x'] + box['width'] / 2
             y = box['y'] + box['height'] / 2
             page.mouse.move(x, y, steps=5)
 
         StealthUtils.random_delay(100, 300)
-        element.click()
+        locator.click()
         StealthUtils.random_delay(100, 300)
