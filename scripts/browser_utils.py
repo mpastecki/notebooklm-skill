@@ -66,15 +66,32 @@ class StealthUtils:
 
     @staticmethod
     def human_type(page: Page, selector: str, text: str, wpm_min: int = 320, wpm_max: int = 480):
-        """Type with human-like speed using locator (auto-waits for stable element)"""
+        """Type with human-like speed using locator (auto-waits for stable element).
+
+        Newlines in `text` must NOT be typed as a bare Enter — NotebookLM's chat
+        input treats Enter as submit, so a multi-line question would be split
+        into one submission per line. Newlines are inserted as Shift+Enter,
+        matching the standard chat-UI convention.
+        """
         locator = page.locator(selector)
 
         # Locator auto-waits for element to be attached, visible, enabled, and stable
         locator.click(timeout=10000)
 
+        # Guard: strip trailing newlines so a heredoc-style question doesn't pre-submit
+        text = text.rstrip("\n")
+
         # Type character by character via keyboard (element already focused)
         for char in text:
-            page.keyboard.type(char, delay=random.uniform(25, 75))
+            if char == "\r":
+                continue
+            if char == "\n":
+                page.keyboard.down("Shift")
+                page.keyboard.press("Enter")
+                page.keyboard.up("Shift")
+            else:
+                page.keyboard.type(char, delay=random.uniform(25, 75))
+
             if random.random() < 0.05:
                 time.sleep(random.uniform(0.15, 0.4))
 
